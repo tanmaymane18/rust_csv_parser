@@ -1,12 +1,18 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::env;
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+struct Args {
+    #[arg(short, long)]
+    filename: String
+}
 
 fn main() {
     println!("Running csv parser");
-    let args: Vec<String> = env::args().collect();
-    let file_path = &args[1];
+    let args = Args::parse();
+    let file_path = args.filename;
     let file = File::open(file_path);
     match file {
         Ok(f) => {

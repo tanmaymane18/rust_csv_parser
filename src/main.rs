@@ -25,15 +25,18 @@ fn main() {
                                 columns_to_values.entry(c.to_string()).or_insert([].to_vec());
                             }
                             first_line_read = true;
+                            continue;
                         }
                         let values: Vec<&str> = l.split(",").collect();
-                        let zipped: Vec<(&str, &str)> = columns.iter().zip(values.iter()).collect();
-                        // TODO: add values to the associated vecs
+                        for (k, v) in columns.iter().zip(values.iter()).collect::<Vec<_>>() {
+                            columns_to_values.entry(k.to_string()).and_modify(|c: &mut Vec<_>| c.push(v.to_string())).or_insert(vec![v.to_string()]);
+                        }
 
                     },
                     Err(_) => {print!("Error reading a line.");}
                 }
             }
+            println!("{:?}", columns_to_values);
         },
         Err(e) => {
             println!("Error while opening the file: {}", e);

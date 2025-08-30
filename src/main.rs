@@ -17,6 +17,33 @@ struct Column<T>{
     hasnan: bool,
 }
 
+
+fn resolve_strings_with_comma(values: Vec<String>) -> Vec<String>{
+    let mut indexes_to_merge:Vec<_> = Vec::new();
+    for (idx, v) in values.iter().enumerate(){
+        if v.contains('"'){
+            indexes_to_merge.push(idx);
+        }
+    }
+
+    if indexes_to_merge.len() == 0 {
+        return values;
+    }
+    let mut new_values:Vec<String> = Vec::new();
+    let mut prev_start = 0;
+    while indexes_to_merge.len() > 1 {
+        let (start, end) = (indexes_to_merge.remove(0), indexes_to_merge.remove(0));
+        new_values.extend_from_slice(&values[prev_start..start]);
+        let val = values[start..end+1].join(",");
+        new_values.push(val);
+        prev_start = end+1;
+        if indexes_to_merge.len() == 0 {
+            new_values.extend_from_slice(&values[prev_start..]);
+        }
+    }
+    new_values
+}
+
 fn main() {
     println!("Running csv parser");
     let args = Args::parse();
@@ -54,9 +81,13 @@ fn main() {
                             continue;
                         }
                         // parsing values 
-                        let values: Vec<&str> = l.split(",").collect();
+                        // need to learn to work with &str vecs
+                        // currently working in unoptimized manner
+                        let mut values: Vec<&str> = l.split(",").collect();
+                        let temp_values = resolve_strings_with_comma(values.iter().map(|e| e.to_string()).collect());
+                        values = temp_values.iter().map(|e| e.as_str()).collect();
+
                         for (k, v) in column_names.iter().zip(values.iter()) {
-                            //columns.entry(k.to_string()).and_modify(|c: &mut Vec<_>| c.push(v.to_string())).or_insert(vec![v.to_string()]);
                             columns.entry(k.to_string()).and_modify(|col: &mut Column<String>| {
                                 col.values.push(v.to_string()); 
                                 if !col.hasnan{
@@ -65,6 +96,7 @@ fn main() {
                                         println!("Found null value for {} {}", col.name, k);
                                         println!("{:?}", column_names);
                                         println!("{:?}", values);
+                                        //println!("{:?}", resolve_quotes(values.iter().map(|e| e.to_string()).collect()));
                                         println!("{:?}", column_names.iter().zip(values.iter()).collect::<Vec<_>>());
                                     }
                                 };
